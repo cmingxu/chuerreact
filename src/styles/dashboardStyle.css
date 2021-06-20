@@ -1,0 +1,8 @@
+#douyin-dashboard-root {
+    height: 300px;
+    width: 180px;
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+    z-index: 999;
+}
