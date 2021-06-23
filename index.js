@@ -1,5 +1,4 @@
 import Store from "electron-store";
-import "@babel/polyfill";
 
 // Modules to control application life and create native browser window
 const { app, BrowserWindow, ipcMain } = require("electron");
@@ -27,6 +26,7 @@ const createWindow = async () => {
       contextIsolation: true,
       enableRemoteModule: true,
       nodeIntegrationInWorker: true,
+      title: "订单快速提取",
       partition: store.get("sessionKey"),
       webSecurity: false
     }
@@ -35,13 +35,30 @@ const createWindow = async () => {
   await mainWindow.loadURL(store.get("firstLaunchPageURL"));
 
   mainWindow.webContents.openDevTools();
-  const filters = {urls: [
-    "https://fxg.jinritemai.com/ffa/g/comment*"
-  ]};
+  const filters = {
+    urls: ["https://fxg.jinritemai.com/product/tcomment/commentList*"]
+  };
 
-  mainWindow.webContents.session.webRequest.onCompleted(filters, (details, callback) => {
-    mainWindow.webContents.send("OnOrderListRequest", details)
-  });
+  mainWindow.webContents.session.webRequest.onCompleted(
+    filters,
+    (details, callback) => {
+      mainWindow.webContents.send("OnCommentListRequest", details);
+    }
+  );
+
+  // Modify the user agent for all requests to the following urls.
+  const filter = {
+    urls: ["*://*/*"]
+  };
+  const defaultUA =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:88.0) Gecko/20100101 Firefox/88.0";
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    filter,
+    (details, callback) => {
+      details.requestHeaders["User-Agent"] = defaultUA;
+      callback({ requestHeaders: details.requestHeaders });
+    }
+  );
 };
 
 const initStore = () => {
@@ -70,7 +87,6 @@ const main = async () => {
   app.on("window-all-closed", function () {
     if (process.platform !== "darwin") app.quit();
   });
-
 };
 
 main().catch(err => {});
